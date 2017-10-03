@@ -114,7 +114,7 @@ func setupRoutes(conf config.Configuration, chartsImplementation data.Charts, he
 	releasesv1.Methods("DELETE").Path("/releases/{releaseName}").Handler(handlers.WithParams(releaseHandlers.DeleteRelease))
 
 	// Auth routes
-	authHandlers, err := handlers.NewAuthHandlers()
+	authHandlers, err := handlers.NewAuthHandlers(dbSession)
 	if err != nil {
 		log.WithError(err).Warn("authentication is disabled")
 	} else {
@@ -122,6 +122,14 @@ func setupRoutes(conf config.Configuration, chartsImplementation data.Charts, he
 		r.Methods("GET").Path("/auth/github/callback").HandlerFunc(authHandlers.GithubCallback)
 		r.Methods("GET").Path("/auth/verify").Handler(negroni.New(AuthGate))
 		r.Methods("DELETE").Path("/auth/logout").HandlerFunc(authHandlers.Logout)
+
+		// User routes
+		userHandlers := handlers.NewUserHandlers(dbSession, chartsImplementation)
+		userRouter := mux.NewRouter()
+		apiv1.PathPrefix("/user").Handler(negroni.New(AuthGate, negroni.Wrap(userRouter)))
+		userv1 := userRouter.PathPrefix("/v1").Subrouter()
+		userv1.Methods("POST").Path("/user/starred/{repo}/{chart}").Handler(handlers.WithParams(userHandlers.StarChart))
+		userv1.Methods("DELETE").Path("/user/starred/{repo}/{chart}").Handler(handlers.WithParams(userHandlers.StarChart))
 	}
 
 	// Serve chart assets
