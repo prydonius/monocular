@@ -17,7 +17,8 @@
 
 GIT_URL=github.com/prydonius/monocular.git
 REPO_URL=https://helm.github.io/monocular
-REPO_DIR=$CIRCLE_WORKING_DIRECTORY
+# Need to expand `~` with $HOME
+REPO_DIR="${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}"
 CHART_PATH="$REPO_DIR/chart/monocular"
 COMMIT_CHANGES=true
 
@@ -82,6 +83,9 @@ update_chart_version() {
   fi
 }
 
+cat ~/project/chart/monocular/Chart.yaml
+log "chart path $CHART_PATH"
+cat "$CHART_PATH/Chart.yaml"
 show_important_vars
 
 circle_setup_git
